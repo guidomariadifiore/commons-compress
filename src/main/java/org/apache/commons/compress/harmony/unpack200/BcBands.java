@@ -35,6 +35,7 @@ import org.apache.commons.compress.harmony.unpack200.bytecode.CodeAttribute;
 import org.apache.commons.compress.harmony.unpack200.bytecode.ExceptionTableEntry;
 import org.apache.commons.compress.harmony.unpack200.bytecode.NewAttribute;
 import org.apache.commons.compress.harmony.unpack200.bytecode.OperandManager;
+import org.eclipse.collections.impl.list.mutable.FastList;
 
 /**
  * Bytecode bands that transmit bytecode instructions.
@@ -352,12 +353,12 @@ public class BcBands extends BandSet {
 
         methodByteCodePacked = new byte[classCount][][];
 
-        final List<Boolean> switchIsTableSwitch = new ArrayList<>();
-        wideByteCodes = new ArrayList<>();
-        for (int c = 0; c < classCount; c++) {
+        final List<Boolean> switchIsTableSwitch = new FastList<>();
+        wideByteCodes = new FastList<>();
+        for (int c = 0; c < classCount; ++c) {
             final int numberOfMethods = methodFlags[c].length;
             methodByteCodePacked[c] = new byte[numberOfMethods][];
-            for (int m = 0; m < numberOfMethods; m++) {
+            for (int m = 0; m < numberOfMethods; ++m) {
                 final long methodFlag = methodFlags[c][m];
                 if (!abstractModifier.matches(methodFlag) && !nativeModifier.matches(methodFlag)) {
                     final ByteArrayOutputStream codeBytes = new ByteArrayOutputStream();
@@ -367,33 +368,33 @@ public class BcBands extends BandSet {
                     }
                     methodByteCodePacked[c][m] = codeBytes.toByteArray();
                     final int[] codes = new int[methodByteCodePacked[c][m].length];
-                    for (int i = 0; i < codes.length; i++) {
+                    for (int i = 0; i < codes.length; ++i) {
                         codes[i] = methodByteCodePacked[c][m][i] & 0xff;
                     }
-                    for (int i = 0; i < methodByteCodePacked[c][m].length; i++) {
+                    for (int i = 0; i < methodByteCodePacked[c][m].length; ++i) {
                         final int codePacked = 0xff & methodByteCodePacked[c][m][i];
                         switch (codePacked) {
                         case 16: // bipush
                         case 188: // newarray
-                            bcByteCount++;
+                            ++bcByteCount;
                             break;
                         case 17: // sipush
-                            bcShortCount++;
+                            ++bcShortCount;
                             break;
                         case 18: // (a)ldc
                         case 19: // aldc_w
-                            bcStringRefCount++;
+                            ++bcStringRefCount;
                             break;
                         case 234: // ildc
                         case 237: // ildc_w
-                            bcIntRefCount++;
+                            ++bcIntRefCount;
                             break;
                         case 235: // fldc
                         case 238: // fldc_w
-                            bcFloatRefCount++;
+                            ++bcFloatRefCount;
                             break;
                         case 197: // multianewarray
-                            bcByteCount++;
+                            ++bcByteCount;
                             // falls-through
                         case 233: // cldc
                         case 236: // cldc_w
@@ -401,46 +402,46 @@ public class BcBands extends BandSet {
                         case 189: // anewarray
                         case 192: // checkcast
                         case 193: // instanceof
-                            bcClassRefCount++;
+                            ++bcClassRefCount;
                             break;
                         case 20: // lldc2_w
-                            bcLongRefCount++;
+                            ++bcLongRefCount;
                             break;
                         case 239: // dldc2_w
-                            bcDoubleRefCount++;
+                            ++bcDoubleRefCount;
                             break;
                         case 169: // ret
-                            bcLocalCount++;
+                            ++bcLocalCount;
                             break;
                         case 167: // goto
                         case 168: // jsr
                         case 200: // goto_w
                         case 201: // jsr_w
-                            bcLabelCount++;
+                            ++bcLabelCount;
                             break;
                         case 170: // tableswitch
                             switchIsTableSwitch.add(Boolean.TRUE);
-                            bcCaseCountCount++;
-                            bcLabelCount++;
+                            ++bcCaseCountCount;
+                            ++bcLabelCount;
                             break;
                         case 171: // lookupswitch
                             switchIsTableSwitch.add(Boolean.FALSE);
-                            bcCaseCountCount++;
-                            bcLabelCount++;
+                            ++bcCaseCountCount;
+                            ++bcLabelCount;
                             break;
                         case 178: // getstatic
                         case 179: // putstatic
                         case 180: // getfield
                         case 181: // putfield
-                            bcFieldRefCount++;
+                            ++bcFieldRefCount;
                             break;
                         case 182: // invokevirtual
                         case 183: // invokespecial
                         case 184: // invokestatic
-                            bcMethodRefCount++;
+                            ++bcMethodRefCount;
                             break;
                         case 185: // invokeinterface
-                            bcIMethodRefCount++;
+                            ++bcIMethodRefCount;
                             break;
                         case 202: // getstatic_this
                         case 203: // putstatic_this
@@ -450,7 +451,7 @@ public class BcBands extends BandSet {
                         case 210: // aload_0_putstatic_this
                         case 211: // aload_0_putfield_this
                         case 212: // aload_0_putfield_this
-                            bcThisFieldCount++;
+                            ++bcThisFieldCount;
                             break;
                         case 206: // invokevirtual_this
                         case 207: // invokespecial_this
@@ -458,7 +459,7 @@ public class BcBands extends BandSet {
                         case 213: // aload_0_invokevirtual_this
                         case 214: // aload_0_invokespecial_this
                         case 215: // aload_0_invokestatic_this
-                            bcThisMethodCount++;
+                            ++bcThisMethodCount;
                             break;
                         case 216: // getstatic_super
                         case 217: // putstatic_super
@@ -468,7 +469,7 @@ public class BcBands extends BandSet {
                         case 224: // aload_0_putstatic_super
                         case 225: // aload_0_getfield_super
                         case 226: // aload_0_putfield_super
-                            bcSuperFieldCount++;
+                            ++bcSuperFieldCount;
                             break;
                         case 220: // invokevirtual_super
                         case 221: // invokespecial_super
@@ -476,41 +477,41 @@ public class BcBands extends BandSet {
                         case 227: // aload_0_invokevirtual_super
                         case 228: // aload_0_invokespecial_super
                         case 229: // aload_0_invokestatic_super
-                            bcSuperMethodCount++;
+                            ++bcSuperMethodCount;
                             break;
                         case 132: // iinc
-                            bcLocalCount++;
-                            bcByteCount++;
+                            ++bcLocalCount;
+                            ++bcByteCount;
                             break;
                         case 196: // wide
                             final int nextInstruction = 0xff & methodByteCodePacked[c][m][i + 1];
                             wideByteCodes.add(Integer.valueOf(nextInstruction));
                             if (nextInstruction == 132) { // iinc
-                                bcLocalCount++;
-                                bcShortCount++;
+                                ++bcLocalCount;
+                                ++bcShortCount;
                             } else if (endsWithLoad(nextInstruction) || endsWithStore(nextInstruction) || nextInstruction == 169) {
-                                bcLocalCount++;
+                                ++bcLocalCount;
                             } else {
                                 segment.log(Segment.LOG_LEVEL_VERBOSE, "Found unhandled " + ByteCode.getByteCode(nextInstruction));
                             }
-                            i++;
+                            ++i;
                             break;
                         case 230: // invokespecial_this_init
                         case 231: // invokespecial_super_init
                         case 232: // invokespecial_new_init
-                            bcInitRefCount++;
+                            ++bcInitRefCount;
                             break;
                         case 253: // ref_escape
-                            bcEscRefCount++;
+                            ++bcEscRefCount;
                             break;
                         case 254: // byte_escape
-                            bcEscCount++;
+                            ++bcEscCount;
                             break;
                         default:
                             if (endsWithLoad(codePacked) || endsWithStore(codePacked)) {
-                                bcLocalCount++;
+                                ++bcLocalCount;
                             } else if (startsWithIf(codePacked)) {
-                                bcLabelCount++;
+                                ++bcLabelCount;
                             }
                         }
                     }
@@ -520,7 +521,7 @@ public class BcBands extends BandSet {
         // other bytecode bands
         bcCaseCount = decodeBandInt("bc_case_count", in, Codec.UNSIGNED5, bcCaseCountCount);
         int bcCaseValueCount = 0;
-        for (int i = 0; i < bcCaseCount.length; i++) {
+        for (int i = 0; i < bcCaseCount.length; ++i) {
             final boolean isTableSwitch = switchIsTableSwitch.get(i).booleanValue();
             if (isTableSwitch) {
                 bcCaseValueCount += 1;
@@ -532,7 +533,7 @@ public class BcBands extends BandSet {
         // Every case value needs a label. We weren't able to count these
         // above, because we didn't know how many cases there were.
         // Have to correct it now.
-        for (int index = 0; index < bcCaseCountCount; index++) {
+        for (int index = 0; index < bcCaseCountCount; ++index) {
             bcLabelCount += bcCaseCount[index];
         }
         bcByte = decodeBandInt("bc_byte", in, Codec.BYTE1, bcByteCount);
@@ -579,7 +580,7 @@ public class BcBands extends BandSet {
         final AttributeLayout staticModifier = attributeDefinitionMap.getAttributeLayout(AttributeLayout.ACC_STATIC, AttributeLayout.CONTEXT_METHOD);
 
         final int[] wideByteCodeArray = new int[wideByteCodes.size()];
-        for (int index = 0; index < wideByteCodeArray.length; index++) {
+        for (int index = 0; index < wideByteCodeArray.length; ++index) {
             wideByteCodeArray[index] = wideByteCodes.get(index).intValue();
         }
         final OperandManager operandManager = new OperandManager(bcCaseCount, bcCaseValue, bcByte, bcShort, bcLocal, bcLabel, bcIntRef, bcFloatRef, bcLongRef,
@@ -588,7 +589,7 @@ public class BcBands extends BandSet {
         operandManager.setSegment(segment);
 
         int i = 0;
-        final ArrayList<List<Attribute>> orderedCodeAttributes = segment.getClassBands().getOrderedCodeAttributes();
+        final FastList<List<Attribute>> orderedCodeAttributes = new FastList<>(segment.getClassBands().getOrderedCodeAttributes());
         int codeAttributeIndex = 0;
 
         // Exception table fields
@@ -601,24 +602,24 @@ public class BcBands extends BandSet {
         final boolean allCodeHasFlags = segment.getSegmentHeader().getOptions().hasAllCodeFlags();
         final boolean[] codeHasFlags = segment.getClassBands().getCodeHasAttributes();
 
-        for (int c = 0; c < classCount; c++) {
+        for (int c = 0; c < classCount; ++c) {
             final int numberOfMethods = methodFlags[c].length;
-            for (int m = 0; m < numberOfMethods; m++) {
+            for (int m = 0; m < numberOfMethods; ++m) {
                 final long methodFlag = methodFlags[c][m];
                 if (!abstractModifier.matches(methodFlag) && !nativeModifier.matches(methodFlag)) {
                     final int maxStack = codeMaxStack[i];
                     int maxLocal = codeMaxNALocals[i];
                     if (!staticModifier.matches(methodFlag)) {
-                        maxLocal++; // one for 'this' parameter
+                        ++maxLocal; // one for 'this' parameter
                     }
                     // I believe this has to take wide arguments into account
                     maxLocal += SegmentUtils.countInvokeInterfaceArgs(methodDescr[c][m]);
                     final String[] cpClass = segment.getCpBands().getCpClass();
                     operandManager.setCurrentClass(cpClass[segment.getClassBands().getClassThisInts()[c]]);
                     operandManager.setSuperClass(cpClass[segment.getClassBands().getClassSuperInts()[c]]);
-                    final List<ExceptionTableEntry> exceptionTable = new ArrayList<>();
+                    final List<ExceptionTableEntry> exceptionTable = new FastList<>();
                     if (handlerCount != null) {
-                        for (int j = 0; j < handlerCount[i]; j++) {
+                        for (int j = 0; j < handlerCount[i]; ++j) {
                             final int handlerClass = handlerClassTypes[i][j] - 1;
                             CPClass cpHandlerClass = null;
                             if (handlerClass != -1) {
@@ -640,7 +641,7 @@ public class BcBands extends BandSet {
                         if (!(attribute instanceof NewAttribute) || ((NewAttribute) attribute).getLayoutIndex() >= 15) {
                             break;
                         }
-                        indexForCodeAttr++;
+                        ++indexForCodeAttr;
                     }
                     methodAttributesList.add(indexForCodeAttr, codeAttr);
                     codeAttr.renumber(codeAttr.byteCodeOffsets);
@@ -649,7 +650,7 @@ public class BcBands extends BandSet {
                         currentAttributes = orderedCodeAttributes.get(i);
                     } else if (codeHasFlags[i]) {
                         currentAttributes = orderedCodeAttributes.get(codeAttributeIndex);
-                        codeAttributeIndex++;
+                        ++codeAttributeIndex;
                     } else {
                         currentAttributes = Collections.EMPTY_LIST;
                     }
@@ -660,7 +661,7 @@ public class BcBands extends BandSet {
                             ((BCIRenumberedAttribute) currentAttribute).renumber(codeAttr.byteCodeOffsets);
                         }
                     }
-                    i++;
+                    ++i;
                 }
             }
         }

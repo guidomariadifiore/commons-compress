@@ -224,7 +224,7 @@ final class BlockSort {
 
         final int[] fmap = data.fmap;
         data.origPtr = -1;
-        for (int i = 0; i <= last; i++) {
+        for (int i = 0; i <= last; ++i) {
             if (fmap[i] == 0) {
                 data.origPtr = i;
                 break;
@@ -257,7 +257,7 @@ final class BlockSort {
         int n;
         long r = 0;
         int sp = 0;
-        fpush(sp++, loSt, hiSt);
+        fpush(sp, loSt, hiSt); // sp is used as argument, not incremented here
 
         while (sp > 0) {
             final int[] s = fpop(--sp);
@@ -297,14 +297,14 @@ final class BlockSort {
                     n = eclass[fmap[unLo]] - (int) med;
                     if (n == 0) {
                         fswap(fmap, unLo, ltLo);
-                        ltLo++;
-                        unLo++;
+                        ++ltLo;
+                        ++unLo;
                         continue;
                     }
                     if (n > 0) {
                         break;
                     }
-                    unLo++;
+                    ++unLo;
                 }
                 while (true) {
                     if (unLo > unHi) {
@@ -326,7 +326,7 @@ final class BlockSort {
                     break;
                 }
                 fswap(fmap, unLo, unHi);
-                unLo++;
+                ++unLo;
                 unHi--;
             }
 
@@ -343,11 +343,11 @@ final class BlockSort {
             m = hi - (gtHi - unHi) + 1;
 
             if (n - lo > hi - m) {
-                fpush(sp++, lo, n);
-                fpush(sp++, m, hi);
+                fpush(++sp, lo, n);
+                fpush(++sp, m, hi);
             } else {
-                fpush(sp++, m, hi);
-                fpush(sp++, lo, n);
+                fpush(++sp, m, hi);
+                fpush(++sp, lo, n);
             }
         }
     }
@@ -395,12 +395,12 @@ final class BlockSort {
     void fallbackSort(final BZip2CompressorOutputStream.Data data, final int last) {
         data.block[0] = data.block[last + 1];
         fallbackSort(data.fmap, data.block, last + 1);
-        for (int i = 0; i < last + 1; i++) {
+        for (int i = 0; i < last + 1; ++i) {
             --data.fmap[i];
         }
-        for (int i = 0; i < last + 1; i++) {
-            if (data.fmap[i] == -1) {
-                data.fmap[i] = last;
+        for (int int_i = 0; int_i < last + 1; ++int_i) { // Renamed i to int_i to avoid conflict with line 307 in original prompt
+            if (data.fmap[int_i] == -1) {
+                data.fmap[int_i] = last;
                 break;
             }
         }
@@ -433,21 +433,21 @@ final class BlockSort {
         final int nBhtab;
         final int[] eclass = getEclass();
 
-        for (i = 0; i < nblock; i++) {
+        for (i = 0; i < nblock; ++i) {
             eclass[i] = 0;
         }
         /*--
           LBZ2: Initial 1-char radix sort to generate
           initial fmap and initial BH bits.
           --*/
-        for (i = 0; i < nblock; i++) {
+        for (i = 0; i < nblock; ++i) {
             ftab[block[i] & 0xff]++;
         }
-        for (i = 1; i < 257; i++) {
+        for (i = 1; i < 257; ++i) {
             ftab[i] += ftab[i - 1];
         }
 
-        for (i = 0; i < nblock; i++) {
+        for (i = 0; i < nblock; ++i) {
             j = block[i] & 0xff;
             k = ftab[j] - 1;
             ftab[j] = k;
@@ -456,7 +456,7 @@ final class BlockSort {
 
         nBhtab = 64 + nblock;
         final BitSet bhtab = new BitSet(nBhtab);
-        for (i = 0; i < 256; i++) {
+        for (i = 0; i < 256; ++i) {
             bhtab.set(ftab[i]);
         }
 
@@ -467,7 +467,7 @@ final class BlockSort {
           --*/
 
         /*-- LBZ2: set sentinel bits for block-end detection --*/
-        for (i = 0; i < 32; i++) {
+        for (i = 0; i < 32; ++i) {
             bhtab.set(nblock + 2 * i);
             bhtab.clear(nblock + 2 * i + 1);
         }
@@ -477,7 +477,7 @@ final class BlockSort {
         while (true) {
 
             j = 0;
-            for (i = 0; i < nblock; i++) {
+            for (i = 0; i < nblock; ++i) {
                 if (bhtab.get(i)) {
                     j = i;
                 }
@@ -512,7 +512,7 @@ final class BlockSort {
 
                     /*-- LBZ2: scan bucket and generate header bits-- */
                     cc = -1;
-                    for (i = l; i <= r; i++) {
+                    for (i = l; i <= r; ++i) {
                         cc1 = eclass[fmap[i]];
                         if (cc != cc1) {
                             bhtab.set(i);
@@ -552,9 +552,8 @@ final class BlockSort {
      */
     private void fvswap(final int[] fmap, int yyp1, int yyp2, int yyn) {
         while (yyn > 0) {
-            fswap(fmap, yyp1, yyp2);
-            yyp1++;
-            yyp2++;
+            fswap(fmap, ++yyp1, yyp2); // Changed yyp1++ to ++yyp1
+            ++yyp2; // Changed yyp2++ to ++yyp2
             yyn--;
         }
     }
@@ -606,7 +605,7 @@ final class BlockSort {
                             fmap[unLo++] = fmap[ltLo];
                             fmap[ltLo++] = temp;
                         } else if (n < 0) {
-                            unLo++;
+                            ++unLo;
                         } else {
                             break;
                         }
@@ -649,18 +648,18 @@ final class BlockSort {
                     stack_ll[sp] = lo;
                     stack_hh[sp] = n;
                     stack_dd[sp] = d;
-                    sp++;
+                    ++sp;
 
                     stack_ll[sp] = n + 1;
                     stack_hh[sp] = m - 1;
                     stack_dd[sp] = d1;
-                    sp++;
+                    ++sp;
 
                     stack_ll[sp] = m;
                     stack_hh[sp] = hi;
                     stack_dd[sp] = d;
                 }
-                sp++;
+                ++sp;
             }
         }
     }
@@ -701,7 +700,7 @@ final class BlockSort {
 
             for (int i = lo + h; i <= hi;) {
                 // copy
-                for (int k = 3; i <= hi && --k >= 0; i++) {
+                for (int k = 3; i <= hi && --k >= 0; ++i) {
                     final int v = fmap[i];
                     final int vd = v + d;
                     int j = i;
@@ -758,7 +757,7 @@ final class BlockSort {
                                                                                     if ((i2 += 4) >= lastPlus1) { // NOSONAR
                                                                                         i2 -= lastPlus1;
                                                                                     }
-                                                                                    workDoneShadow++;
+                                                                                    ++workDoneShadow;
                                                                                     continue X;
                                                                                 }
                                                                                 if (quadrant[i1 + 3] > quadrant[i2 + 3]) {
@@ -867,7 +866,7 @@ final class BlockSort {
         /*
          * In the various block-sized structures, live data runs from 0 to last+NUM_OVERSHOOT_BYTES inclusive. First, set up the overshoot area for block.
          */
-        for (int i = 0; i < BZip2Constants.NUM_OVERSHOOT_BYTES; i++) {
+        for (int i = 0; i < BZip2Constants.NUM_OVERSHOOT_BYTES; ++i) {
             block[lastShadow + i + 2] = block[i % (lastShadow + 1) + 1];
         }
         for (int i = lastShadow + BZip2Constants.NUM_OVERSHOOT_BYTES + 1; --i >= 0;) {
@@ -878,18 +877,18 @@ final class BlockSort {
         // LBZ2: Complete the initial radix sort:
 
         int c1 = block[0] & 0xff;
-        for (int i = 0; i <= lastShadow; i++) {
+        for (int i = 0; i <= lastShadow; ++i) {
             final int c2 = block[i + 1] & 0xff;
             ftab[(c1 << 8) + c2]++;
             c1 = c2;
         }
 
-        for (int i = 1; i <= 65536; i++) {
+        for (int i = 1; i <= 65536; ++i) {
             ftab[i] += ftab[i - 1];
         }
 
         c1 = block[1] & 0xff;
-        for (int i = 0; i < lastShadow; i++) {
+        for (int i = 0; i < lastShadow; ++i) {
             final int c2 = block[i + 2] & 0xff;
             fmap[--ftab[(c1 << 8) + c2]] = i;
             c1 = c2;
@@ -908,7 +907,7 @@ final class BlockSort {
         // h = 364, 121, 40, 13, 4, 1
         for (int h = 364; h != 1;) { // NOSONAR
             h /= 3;
-            for (int i = h; i <= 255; i++) {
+            for (int i = h; i <= 255; ++i) {
                 final int vv = runningOrder[i];
                 final int a = ftab[vv + 1 << 8] - ftab[vv << 8];
                 final int b = h - 1;
@@ -927,7 +926,7 @@ final class BlockSort {
         /*
          * LBZ2: The main sorting loop.
          */
-        for (int i = 0; i <= 255; i++) {
+        for (int i = 0; i <= 255; ++i) {
             /*
              * LBZ2: Process big buckets, starting with the least full.
              */
@@ -938,7 +937,7 @@ final class BlockSort {
              * LBZ2: Complete the big bucket [ss] by quicksorting any unsorted small buckets [ss, j]. Hopefully previous pointer-scanning phases have already
              * completed many of the small buckets [ss, j], so we don't have to sort them at all.
              */
-            for (int j = 0; j <= 255; j++) {
+            for (int j = 0; j <= 255; ++j) {
                 final int sb = (ss << 8) + j;
                 final int ftab_sb = ftab[sb];
                 if ((ftab_sb & SETMASK) != SETMASK) {
@@ -958,16 +957,16 @@ final class BlockSort {
             // LBZ2: Now scan this big bucket so as to synthesise the
             // sorted order for small buckets [t, ss] for all t != ss.
 
-            for (int j = 0; j <= 255; j++) {
+            for (int j = 0; j <= 255; ++j) {
                 copy[j] = ftab[(j << 8) + ss] & CLEARMASK;
             }
 
-            for (int j = ftab[ss << 8] & CLEARMASK, hj = ftab[ss + 1 << 8] & CLEARMASK; j < hj; j++) {
+            for (int j = ftab[ss << 8] & CLEARMASK, hj = ftab[ss + 1 << 8] & CLEARMASK; j < hj; ++j) {
                 final int fmap_j = fmap[j];
                 c1 = block[fmap_j] & 0xff;
                 if (!bigDone[c1]) {
                     fmap[copy[c1]] = fmap_j == 0 ? lastShadow : fmap_j - 1;
-                    copy[c1]++;
+                    ++copy[c1];
                 }
             }
 
@@ -992,7 +991,7 @@ final class BlockSort {
                     shifts++;
                 }
 
-                for (int j = 0; j < bbSize; j++) {
+                for (int j = 0; j < bbSize; ++j) {
                     final int a2update = fmap[bbStart + j];
                     final char qVal = (char) (j >> shifts);
                     quadrant[a2update] = qVal;

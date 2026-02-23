@@ -21,9 +21,7 @@ package org.apache.commons.compress.harmony.pack200;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +29,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 
+import org.eclipse.collections.impl.list.mutable.FastList;
+import org.eclipse.collections.impl.map.mutable.UnifiedMap;
 import org.objectweb.asm.Type;
 
 /**
@@ -56,15 +56,15 @@ public class CpBands extends BandSet {
     private final Set<CPMethodOrField> cp_Method = new TreeSet<>();
     private final Set<CPMethodOrField> cp_Imethod = new TreeSet<>();
 
-    private final Map<String, CPUTF8> stringsToCpUtf8 = new HashMap<>();
-    private final Map<String, CPNameAndType> stringsToCpNameAndType = new HashMap<>();
-    private final Map<String, CPClass> stringsToCpClass = new HashMap<>();
-    private final Map<String, CPSignature> stringsToCpSignature = new HashMap<>();
-    private final Map<String, CPMethodOrField> stringsToCpMethod = new HashMap<>();
-    private final Map<String, CPMethodOrField> stringsToCpField = new HashMap<>();
-    private final Map<String, CPMethodOrField> stringsToCpIMethod = new HashMap<>();
+    private final Map<String, CPUTF8> stringsToCpUtf8 = new UnifiedMap<>();
+    private final Map<String, CPNameAndType> stringsToCpNameAndType = new UnifiedMap<>();
+    private final Map<String, CPClass> stringsToCpClass = new UnifiedMap<>();
+    private final Map<String, CPSignature> stringsToCpSignature = new UnifiedMap<>();
+    private final Map<String, CPMethodOrField> stringsToCpMethod = new UnifiedMap<>();
+    private final Map<String, CPMethodOrField> stringsToCpField = new UnifiedMap<>();
+    private final Map<String, CPMethodOrField> stringsToCpIMethod = new UnifiedMap<>();
 
-    private final Map<Object, CPConstant<?>> objectsToCPConstant = new HashMap<>();
+    private final Map<Object, CPConstant<?>> objectsToCPConstant = new UnifiedMap<>();
 
     private final Segment segment;
 
@@ -125,14 +125,14 @@ public class CpBands extends BandSet {
             int j = 0;
             for (final ConstantPoolEntry entry : set) {
                 entry.setIndex(j);
-                j++;
+                ++j;
             }
         }
         final BiFunction<? super CPClass, ? super Integer, ? extends Integer> remappingFunction = (k, v) -> v != null ? v + 1 : 1;
-        final Map<CPClass, Integer> classNameToIndex = new HashMap<>();
+        final Map<CPClass, Integer> classNameToIndex = new UnifiedMap<>();
         cp_Field.forEach(mOrF -> mOrF.setIndexInClass(classNameToIndex.compute(mOrF.getClassName(), remappingFunction) - 1));
         classNameToIndex.clear();
-        final Map<CPClass, Integer> classNameToConstructorIndex = new HashMap<>();
+        final Map<CPClass, Integer> classNameToConstructorIndex = new UnifiedMap<>();
         cp_Method.forEach(mOrF -> {
             final CPClass cpClassName = mOrF.getClassName();
             mOrF.setIndexInClass(classNameToIndex.compute(cpClassName, remappingFunction) - 1);
@@ -364,17 +364,17 @@ public class CpBands extends BandSet {
         }
         CPSignature cpS = stringsToCpSignature.get(signature);
         if (cpS == null) {
-            final List<CPClass> cpClasses = new ArrayList<>();
+            final List<CPClass> cpClasses = new FastList<>();
             final CPUTF8 signatureUTF8;
             if (signature.length() > 1 && signature.indexOf('L') != -1) {
-                final List<String> classes = new ArrayList<>();
+                final List<String> classes = new FastList<>();
                 final char[] chars = signature.toCharArray();
-                final StringBuilder signatureString = new StringBuilder();
-                for (int i = 0; i < chars.length; i++) {
+                final StringBuilder signatureString = new StringBuilder(signature.length());
+                for (int i = 0; i < chars.length; ++i) {
                     signatureString.append(chars[i]);
                     if (chars[i] == 'L') {
-                        final StringBuilder className = new StringBuilder();
-                        for (int j = i + 1; j < chars.length; j++) {
+                        final StringBuilder className = new StringBuilder(64);
+                        for (int j = i + 1; j < chars.length; ++j) {
                             final char c = chars[j];
                             if (!Character.isLetter(c) && !Character.isDigit(c) && c != '/' && c != '$' && c != '_') {
                                 classes.add(className.toString());
@@ -473,7 +473,7 @@ public class CpBands extends BandSet {
         int i = 0;
         for (final CPClass cpCl : cp_Class) {
             cpClass[i] = cpCl.getIndexInCpUtf8();
-            i++;
+            ++i;
         }
         final byte[] encodedBand = encodeBandInt("cpClass", cpClass, Codec.UDELTA5);
         out.write(encodedBand);
@@ -488,7 +488,7 @@ public class CpBands extends BandSet {
         for (final CPNameAndType nameAndType : cp_Descr) {
             cpDescrName[i] = nameAndType.getNameIndex();
             cpDescrType[i] = nameAndType.getTypeIndex();
-            i++;
+            ++i;
         }
 
         byte[] encodedBand = encodeBandInt("cp_Descr_Name", cpDescrName, Codec.DELTA5);
@@ -509,7 +509,7 @@ public class CpBands extends BandSet {
             final long l = Double.doubleToLongBits(dbl.getDouble());
             highBits[i] = (int) (l >> 32);
             loBits[i] = (int) l;
-            i++;
+            ++i;
         }
         byte[] encodedBand = encodeBandInt("cp_Double_hi", highBits, Codec.UDELTA5);
         out.write(encodedBand);
@@ -526,7 +526,7 @@ public class CpBands extends BandSet {
         int i = 0;
         for (final CPFloat fl : cp_Float) {
             cpFloat[i] = Float.floatToIntBits(fl.getFloat());
-            i++;
+            ++i;
         }
         final byte[] encodedBand = encodeBandInt("cp_Float", cpFloat, Codec.UDELTA5);
         out.write(encodedBand);
@@ -539,7 +539,7 @@ public class CpBands extends BandSet {
         int i = 0;
         for (final CPInt integer : cp_Int) {
             cpInt[i] = integer.getInt();
-            i++;
+            ++i;
         }
         final byte[] encodedBand = encodeBandInt("cp_Int", cpInt, Codec.UDELTA5);
         out.write(encodedBand);
@@ -555,7 +555,7 @@ public class CpBands extends BandSet {
             final long l = lng.getLong();
             highBits[i] = (int) (l >> 32);
             loBits[i] = (int) l;
-            i++;
+            ++i;
         }
         byte[] encodedBand = encodeBandInt("cp_Long_hi", highBits, Codec.UDELTA5);
         out.write(encodedBand);
@@ -574,7 +574,7 @@ public class CpBands extends BandSet {
         for (final CPMethodOrField mOrF : cp) {
             cp_methodOrField_class[i] = mOrF.getClassIndex();
             cp_methodOrField_desc[i] = mOrF.getDescIndex();
-            i++;
+            ++i;
         }
         byte[] encodedBand = encodeBandInt(name + "_class", cp_methodOrField_class, Codec.DELTA5);
         out.write(encodedBand);
@@ -588,12 +588,12 @@ public class CpBands extends BandSet {
     private void writeCpSignature(final OutputStream out) throws IOException, Pack200Exception {
         PackingUtils.log("Writing " + cp_Signature.size() + " Signature entries...");
         final int[] cpSignatureForm = new int[cp_Signature.size()];
-        final List<CPClass> classes = new ArrayList<>();
+        final List<CPClass> classes = new FastList<>();
         int i = 0;
         for (final CPSignature cpS : cp_Signature) {
             classes.addAll(cpS.getClasses());
             cpSignatureForm[i] = cpS.getIndexInCpUtf8();
-            i++;
+            ++i;
         }
         final int[] cpSignatureClasses = new int[classes.size()];
         Arrays.setAll(cpSignatureClasses, j -> classes.get(j).getIndex());
@@ -613,7 +613,7 @@ public class CpBands extends BandSet {
         int i = 0;
         for (final CPString cpStr : cp_String) {
             cpString[i] = cpStr.getIndexInCpUtf8();
-            i++;
+            ++i;
         }
         final byte[] encodedBand = encodeBandInt("cpString", cpString, Codec.UDELTA5);
         out.write(encodedBand);
@@ -624,23 +624,23 @@ public class CpBands extends BandSet {
         PackingUtils.log("Writing " + cp_Utf8.size() + " UTF8 entries...");
         final int[] cpUtf8Prefix = new int[cp_Utf8.size() - 2];
         final int[] cpUtf8Suffix = new int[cp_Utf8.size() - 1];
-        final List<Character> chars = new ArrayList<>();
-        final List<Integer> bigSuffix = new ArrayList<>();
-        final List<Character> bigChars = new ArrayList<>();
+        final List<Character> chars = new FastList<>();
+        final List<Integer> bigSuffix = new FastList<>();
+        final List<Character> bigChars = new FastList<>();
         final Object[] cpUtf8Array = cp_Utf8.toArray();
         final String first = ((CPUTF8) cpUtf8Array[1]).getUnderlyingString();
         cpUtf8Suffix[0] = first.length();
         addCharacters(chars, first.toCharArray());
-        for (int i = 2; i < cpUtf8Array.length; i++) {
+        for (int i = 2; i < cpUtf8Array.length; ++i) {
             final char[] previous = ((CPUTF8) cpUtf8Array[i - 1]).getUnderlyingString().toCharArray();
             String currentStr = ((CPUTF8) cpUtf8Array[i]).getUnderlyingString();
             final char[] current = currentStr.toCharArray();
             int prefix = 0;
-            for (int j = 0; j < previous.length; j++) {
+            for (int j = 0; j < previous.length; ++j) {
                 if (previous[j] != current[j]) {
                     break;
                 }
-                prefix++;
+                ++prefix;
             }
             cpUtf8Prefix[i - 2] = prefix;
             currentStr = currentStr.substring(prefix);
@@ -659,7 +659,7 @@ public class CpBands extends BandSet {
         final int[] cpUtf8BigSuffix = new int[bigSuffix.size()];
         final int[][] cpUtf8BigChars = new int[bigSuffix.size()][];
         Arrays.setAll(cpUtf8Chars, i -> chars.get(i).charValue());
-        for (int i = 0; i < cpUtf8BigSuffix.length; i++) {
+        for (int i = 0; i < cpUtf8BigSuffix.length; ++i) {
             final int numBigChars = bigSuffix.get(i).intValue();
             cpUtf8BigSuffix[i] = numBigChars;
             cpUtf8BigChars[i] = new int[numBigChars];
@@ -682,7 +682,7 @@ public class CpBands extends BandSet {
         out.write(encodedBand);
         PackingUtils.log("Wrote " + encodedBand.length + " bytes from cpUtf8BigSuffix[" + cpUtf8BigSuffix.length + "]");
 
-        for (int i = 0; i < cpUtf8BigChars.length; i++) {
+        for (int i = 0; i < cpUtf8BigChars.length; ++i) {
             encodedBand = encodeBandInt("cpUtf8BigChars " + i, cpUtf8BigChars[i], Codec.DELTA5);
             out.write(encodedBand);
             PackingUtils.log("Wrote " + encodedBand.length + " bytes from cpUtf8BigChars" + i + "[" + cpUtf8BigChars[i].length + "]");

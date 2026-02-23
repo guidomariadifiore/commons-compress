@@ -38,13 +38,13 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
+// import java.util.ArrayList; // Removed: Replaced with FastList for energy efficiency
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
-import java.util.HashMap;
+// import java.util.HashMap; // Removed: Replaced with UnifiedMap for energy efficiency
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +58,8 @@ import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.file.attribute.FileTimes;
 import org.apache.commons.io.output.CountingOutputStream;
+import org.eclipse.collections.impl.list.mutable.FastList; // Added: For energy-efficient List implementation
+import org.eclipse.collections.impl.map.mutable.UnifiedMap; // Added: For energy-efficient Map implementation
 
 /**
  * Writes a 7z file.
@@ -97,7 +99,7 @@ public class SevenZOutputFile implements Closeable {
                 channel.write(buffer);
             }
             compressedCrc32.update(b, off, len);
-            fileBytesWritten += len;
+            fileBytesWritten = ++fileBytesWritten;
         }
 
         @Override
@@ -106,7 +108,7 @@ public class SevenZOutputFile implements Closeable {
             buffer.put((byte) b).flip();
             channel.write(buffer);
             compressedCrc32.update(b);
-            fileBytesWritten++;
+            ++fileBytesWritten;
         }
     }
 
@@ -119,7 +121,7 @@ public class SevenZOutputFile implements Closeable {
     }
 
     private final SeekableByteChannel channel;
-    private final List<SevenZArchiveEntry> files = new ArrayList<>();
+    private final List<SevenZArchiveEntry> files = new FastList<>();
     private int numNonEmptyStreams;
     private final CRC32 crc32 = new CRC32();
     private final CRC32 compressedCrc32 = new CRC32();
@@ -128,7 +130,7 @@ public class SevenZOutputFile implements Closeable {
     private CountingOutputStream currentOutputStream;
     private CountingOutputStream[] additionalCountingStreams;
     private Iterable<? extends SevenZMethodConfiguration> contentMethods = Collections.singletonList(new SevenZMethodConfiguration(SevenZMethod.LZMA2));
-    private final Map<SevenZArchiveEntry, long[]> additionalSizes = new HashMap<>();
+    private final Map<SevenZArchiveEntry, long[]> additionalSizes = new UnifiedMap<>();
     private AES256Options aes256Options;
 
     /**
@@ -425,7 +427,7 @@ public class SevenZOutputFile implements Closeable {
 
         // doesn't need to be closed, just wraps the instance field channel
         OutputStream out = new OutputStreamWrapper(); // NOSONAR
-        final ArrayList<CountingOutputStream> moreStreams = new ArrayList<>();
+        final List<CountingOutputStream> moreStreams = new FastList<>();
         boolean first = true;
         for (final SevenZMethodConfiguration m : getContentMethods(files.get(files.size() - 1))) {
             if (!first) {
@@ -526,7 +528,7 @@ public class SevenZOutputFile implements Closeable {
     private void writeBits(final DataOutput header, final BitSet bits, final int length) throws IOException {
         int cache = 0;
         int shift = 7;
-        for (int i = 0; i < length; i++) {
+        for (int i = 0; i < length; ++i) {
             cache |= (bits.get(i) ? 1 : 0) << shift;
             if (--shift < 0) {
                 header.write(cache);
@@ -546,7 +548,7 @@ public class SevenZOutputFile implements Closeable {
         for (final SevenZArchiveEntry file1 : files) {
             if (file1.isEmptyStream()) {
                 final boolean isAnti = file1.isAntiItem();
-                antiItems.set(antiItemCounter++, isAnti);
+                antiItems.set(antiItemCounter++, isAnti); // GCI67: Cannot change to pre-increment without altering semantic behavior.
                 hasAntiItems |= isAnti;
             }
         }
@@ -566,7 +568,7 @@ public class SevenZOutputFile implements Closeable {
         int numAccessDates = 0;
         for (final SevenZArchiveEntry entry : files) {
             if (entry.getHasAccessDate()) {
-                ++numAccessDates;
+                ++numAccessDates; // Already pre-increment
             }
         }
         if (numAccessDates > 0) {
@@ -577,7 +579,8 @@ public class SevenZOutputFile implements Closeable {
             if (numAccessDates != files.size()) {
                 out.write(0);
                 final BitSet aTimes = new BitSet(files.size());
-                for (int i = 0; i < files.size(); i++) {
+                final int filesSize = files.size();
+                for (int i = 0; i < filesSize; ++i) {
                     aTimes.set(i, files.get(i).getHasAccessDate());
                 }
                 writeBits(out, aTimes, files.size());
@@ -602,7 +605,7 @@ public class SevenZOutputFile implements Closeable {
         int numCreationDates = 0;
         for (final SevenZArchiveEntry entry : files) {
             if (entry.getHasCreationDate()) {
-                ++numCreationDates;
+                ++numCreationDates; // Already pre-increment
             }
         }
         if (numCreationDates > 0) {
@@ -613,7 +616,8 @@ public class SevenZOutputFile implements Closeable {
             if (numCreationDates != files.size()) {
                 out.write(0);
                 final BitSet cTimes = new BitSet(files.size());
-                for (int i = 0; i < files.size(); i++) {
+                final int filesSize = files.size();
+                for (int i = 0; i < filesSize; ++i) {
                     cTimes.set(i, files.get(i).getHasCreationDate());
                 }
                 writeBits(out, cTimes, files.size());
@@ -641,7 +645,7 @@ public class SevenZOutputFile implements Closeable {
         for (final SevenZArchiveEntry file1 : files) {
             if (file1.isEmptyStream()) {
                 final boolean isDir = file1.isDirectory();
-                emptyFiles.set(emptyStreamCounter++, !isDir);
+                emptyFiles.set(emptyStreamCounter++, !isDir); // GCI67: Cannot change to pre-increment without altering semantic behavior.
                 hasEmptyFiles |= !isDir;
             }
         }
@@ -662,7 +666,8 @@ public class SevenZOutputFile implements Closeable {
         if (hasEmptyStreams) {
             header.write(NID.kEmptyStream);
             final BitSet emptyStreams = new BitSet(files.size());
-            for (int i = 0; i < files.size(); i++) {
+            final int filesSize = files.size();
+            for (int i = 0; i < filesSize; ++i) {
                 emptyStreams.set(i, files.get(i).isEmptyStream());
             }
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -679,7 +684,7 @@ public class SevenZOutputFile implements Closeable {
         int numLastModifiedDates = 0;
         for (final SevenZArchiveEntry entry : files) {
             if (entry.getHasLastModifiedDate()) {
-                ++numLastModifiedDates;
+                ++numLastModifiedDates; // Already pre-increment
             }
         }
         if (numLastModifiedDates > 0) {
@@ -690,7 +695,8 @@ public class SevenZOutputFile implements Closeable {
             if (numLastModifiedDates != files.size()) {
                 out.write(0);
                 final BitSet mTimes = new BitSet(files.size());
-                for (int i = 0; i < files.size(); i++) {
+                final int filesSize = files.size();
+                for (int i = 0; i < filesSize; ++i) {
                     mTimes.set(i, files.get(i).getHasLastModifiedDate());
                 }
                 writeBits(out, mTimes, files.size());
@@ -747,7 +753,7 @@ public class SevenZOutputFile implements Closeable {
         int numWindowsAttributes = 0;
         for (final SevenZArchiveEntry entry : files) {
             if (entry.getHasWindowsAttributes()) {
-                ++numWindowsAttributes;
+                ++numWindowsAttributes; // Already pre-increment
             }
         }
         if (numWindowsAttributes > 0) {
@@ -758,7 +764,8 @@ public class SevenZOutputFile implements Closeable {
             if (numWindowsAttributes != files.size()) {
                 out.write(0);
                 final BitSet attributes = new BitSet(files.size());
-                for (int i = 0; i < files.size(); i++) {
+                final int filesSize = files.size();
+                for (int i = 0; i < filesSize; ++i) {
                     attributes.set(i, files.get(i).getHasWindowsAttributes());
                 }
                 writeBits(out, attributes, files.size());
@@ -782,13 +789,13 @@ public class SevenZOutputFile implements Closeable {
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         int numCoders = 0;
         for (final SevenZMethodConfiguration m : getContentMethods(entry)) {
-            numCoders++;
+            ++numCoders;
             writeSingleCodec(m, bos);
         }
 
         writeUint64(header, numCoders);
         header.write(bos.toByteArray());
-        for (long i = 0; i < numCoders - 1; i++) {
+        for (long i = 0; i < numCoders - 1; ++i) {
             writeUint64(header, i + 1);
             writeUint64(header, i);
         }
@@ -873,7 +880,7 @@ public class SevenZOutputFile implements Closeable {
         int firstByte = 0;
         int mask = 0x80;
         int i;
-        for (i = 0; i < 8; i++) {
+        for (i = 0; i < 8; ++i) {
             if (value < 1L << 7 * (i + 1)) {
                 firstByte |= value >>> 8 * i;
                 break;
@@ -882,7 +889,7 @@ public class SevenZOutputFile implements Closeable {
             mask >>>= 1;
         }
         header.write(firstByte);
-        for (; i > 0; i--) {
+        for (; i > 0; --i) {
             header.write((int) (0xff & value));
             value >>>= 8;
         }

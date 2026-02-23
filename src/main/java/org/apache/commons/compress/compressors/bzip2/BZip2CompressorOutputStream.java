@@ -216,11 +216,11 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
 
     private static void hbAssignCodes(final int[] code, final byte[] length, final int minLen, final int maxLen, final int alphaSize) {
         int vec = 0;
-        for (int n = minLen; n <= maxLen; n++) {
-            for (int i = 0; i < alphaSize; i++) {
+        for (int n = minLen; n <= maxLen; ++n) {
+            for (int i = 0; i < alphaSize; ++i) {
                 if ((length[i] & 0xff) == n) {
                     code[i] = vec;
-                    vec++;
+                    ++vec;
                 }
             }
             vec <<= 1;
@@ -584,7 +584,7 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
         for (int i = 0; i < 256; i++) {
             if (inUse[i]) {
                 unseqToSeq[i] = (byte) nInUseShadow;
-                nInUseShadow++;
+                ++nInUseShadow;
             }
         }
         this.nInUse = nInUseShadow;
@@ -606,7 +606,7 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
             int j = 0;
 
             while (ll_i != tmp) {
-                j++;
+                ++j;
                 final byte tmp2 = tmp;
                 tmp = yy[j];
                 yy[j] = tmp2;
@@ -621,11 +621,11 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
                     while (true) {
                         if ((zPend & 1) == 0) {
                             sfmap[wr] = RUNA;
-                            wr++;
+                            ++wr;
                             mtfFreq[RUNA]++;
                         } else {
                             sfmap[wr] = RUNB;
-                            wr++;
+                            ++wr;
                             mtfFreq[RUNB]++;
                         }
 
@@ -637,7 +637,7 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
                     zPend = 0;
                 }
                 sfmap[wr] = (char) (j + 1);
-                wr++;
+                ++wr;
                 mtfFreq[j + 1]++;
             }
         }
@@ -647,11 +647,11 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
             while (true) {
                 if ((zPend & 1) == 0) {
                     sfmap[wr] = RUNA;
-                    wr++;
+                    ++wr;
                     mtfFreq[RUNA]++;
                 } else {
                     sfmap[wr] = RUNB;
-                    wr++;
+                    ++wr;
                     mtfFreq[RUNB]++;
                 }
 
@@ -884,7 +884,7 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
 
                 fave[bt]++;
                 selector[nSelectors] = (byte) bt;
-                nSelectors++;
+                ++nSelectors;
 
                 /*
                  * Increment the symbol frequencies for the selected table.
@@ -924,7 +924,7 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
             int j = 0;
 
             while (ll_i != tmp) {
-                j++;
+                ++j;
                 final byte tmp2 = tmp;
                 tmp = pos[j];
                 pos[j] = tmp2;
@@ -996,7 +996,7 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
                     if (inUse[i16 + j]) {
                         bsBuffShadow |= 1 << 32 - bsLiveShadow - 1;
                     }
-                    bsLiveShadow++;
+                    ++bsLiveShadow;
                 }
             }
         }
@@ -1016,7 +1016,7 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
         int bsBuffShadow = this.bsBuff;
 
         for (int i = 0; i < nSelectors; i++) {
-            for (int j = 0, hj = selectorMtf[i] & 0xff; j < hj; j++) {
+            for (int j = 0, hj = selectorMtf[i] & 0xff; j < hj; ++j) {
                 // inlined: bsW(1, 1);
                 while (bsLiveShadow >= 8) {
                     outShadow.write(bsBuffShadow >> 24);
@@ -1024,7 +1024,7 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
                     bsLiveShadow -= 8;
                 }
                 bsBuffShadow |= 1 << 32 - bsLiveShadow - 1;
-                bsLiveShadow++;
+                ++bsLiveShadow;
             }
 
             // inlined: bsW(1, 0);
@@ -1034,7 +1034,7 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
                 bsLiveShadow -= 8;
             }
             // bsBuffShadow |= 0 << (32 - bsLiveShadow - 1);
-            bsLiveShadow++;
+            ++bsLiveShadow;
         }
 
         this.bsBuff = bsBuffShadow;
@@ -1073,7 +1073,7 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
                     bsBuffShadow |= 2 << 32 - bsLiveShadow - 2;
                     bsLiveShadow += 2;
 
-                    curr++; /* 10 */
+                    ++curr; /* 10 */
                 }
 
                 while (curr > lti) {
@@ -1096,7 +1096,7 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
                     bsLiveShadow -= 8;
                 }
                 // bsBuffShadow |= 0 << (32 - bsLiveShadow - 1);
-                bsLiveShadow++;
+                ++bsLiveShadow;
             }
         }
 
@@ -1140,11 +1140,11 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
                 bsBuffShadow |= code_selCtr[sfmap_i] << 32 - bsLiveShadow - n;
                 bsLiveShadow += n;
 
-                gs++;
+                ++gs;
             }
 
             gs = ge + 1;
-            selCtr++;
+            ++selCtr;
         }
 
         this.bsBuff = bsBuffShadow;
@@ -1186,7 +1186,7 @@ public class BZip2CompressorOutputStream extends CompressorOutputStream<OutputSt
             }
         } else {
             this.currentChar = b & 0xff;
-            this.runLength++;
+            ++this.runLength;
         }
     }
 

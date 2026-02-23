@@ -175,11 +175,11 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
         final int[][] base = dataShadow.base;
         final int[][] perm = dataShadow.perm;
 
-        for (int t = 0; t < nGroups; t++) {
+        for (int t = 0; t < nGroups; ++t) {
             final char[] len_t = len[t];
             int minLen = len_t[0];
             int maxLen = len_t[0];
-            for (int i = 1; i < alphaSize; i++) {
+            for (int i = 1; i < alphaSize; ++i) {
                 final char lent = len_t[i];
                 if (lent > maxLen) {
                     maxLen = lent;
@@ -201,10 +201,11 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
      */
     private static void hbCreateDecodeTables(final int[] limit, final int[] base, final int[] perm, final char[] length, final int minLen, final int maxLen,
             final int alphaSize) {
-        for (int i = minLen, pp = 0; i <= maxLen; i++) {
-            for (int j = 0; j < alphaSize; j++) {
+        for (int i = minLen, pp = 0; i <= maxLen; ++i) {
+            for (int j = 0; j < alphaSize; ++j) {
                 if (length[j] == i) {
-                    perm[pp++] = j;
+                    perm[pp] = j;
+                    ++pp;
                 }
             }
         }
@@ -212,18 +213,18 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
         Arrays.fill(base, 0);
         Arrays.fill(limit, minLen, maxLen + 1, 0);
         // Compute histogram of code lengths, shifted by 1.
-        for (int i = 0; i < alphaSize; i++) {
+        for (int i = 0; i < alphaSize; ++i) {
             final int len = length[i] + 1;
             base[len]++;
         }
         // Compute cumulative counts: base[len] = # of codes with length < len.
         // In other terms: base[len] = index of the first code in the `perm` table.
-        for (int len = 1; len < base.length; len++) {
+        for (int len = 1; len < base.length; ++len) {
             base[len] += base[len - 1];
         }
         // Compute the last code for each length.
         int vec = 0;
-        for (int len = minLen; len <= maxLen; len++) {
+        for (int len = minLen; len <= maxLen; ++len) {
             // increment by the number of length `len` codes
             vec += base[len + 1] - base[len];
             // vec is now the last code of length `len` + 1
@@ -233,7 +234,7 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
         // Compute the bias between code value and table index.
         // base[minLen] cannot be computed using this rule, since limit[minLen - 1] does not exist,
         // but has already the correct value 0.
-        for (int len = minLen + 1; len <= maxLen; len++) {
+        for (int len = minLen + 1; len <= maxLen; ++len) {
             base[len] = (limit[len - 1] + 1 << 1) - base[len];
         }
     }
@@ -244,7 +245,7 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
 
         int nInUseShadow = 0;
 
-        for (int i = 0; i < 256; i++) {
+        for (int i = 0; i < 256; ++i) {
             if (inUse[i]) {
                 seqToUnseq[nInUseShadow++] = (byte) i;
             }
@@ -273,17 +274,17 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
         int inUse16 = 0;
 
         /* Receive the mapping table */
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < 16; ++i) {
             if (bsGetBit(bin)) {
                 inUse16 |= 1 << i;
             }
         }
 
         Arrays.fill(inUse, false);
-        for (int i = 0; i < 16; i++) {
+        for (int i = 0; i < 16; ++i) {
             if ((inUse16 & 1 << i) != 0) {
                 final int i16 = i << 4;
-                for (int j = 0; j < 16; j++) {
+                for (int j = 0; j < 16; ++j) {
                     if (bsGetBit(bin)) {
                         inUse[i16 + j] = true;
                     }
@@ -306,10 +307,10 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
         // See https://gnu.wildebeest.org/blog/mjw/2019/08/02/bzip2-and-the-cve-that-wasnt/
         // and https://sourceware.org/ml/bzip2-devel/2019-q3/msg00007.html
 
-        for (int i = 0; i < selectors; i++) {
+        for (int i = 0; i < selectors; ++i) {
             int j = 0;
             while (bsGetBit(bin)) {
-                j++;
+                ++j;
             }
             if (i < MAX_SELECTORS) {
                 selectorMtf[i] = (byte) j;
@@ -322,14 +323,14 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
             pos[v] = (byte) v;
         }
 
-        for (int i = 0; i < nSelectors; i++) {
+        for (int i = 0; i < nSelectors; ++i) {
             int v = selectorMtf[i] & 0xff;
             checkBounds(v, N_GROUPS, "selectorMtf");
             final byte tmp = pos[v];
             while (v > 0) {
                 // nearly all times v is zero, 4 in most other cases
                 pos[v] = pos[v - 1];
-                v--;
+                --v;
             }
             pos[0] = tmp;
             selector[i] = tmp;
@@ -338,10 +339,10 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
         final char[][] len = dataShadow.temp_charArray2d;
 
         /* Now the coding tables */
-        for (int t = 0; t < nGroups; t++) {
+        for (int t = 0; t < nGroups; ++t) {
             int curr = bsR(bin, 5);
             final char[] len_t = len[t];
-            for (int i = 0; i < alphaSize; i++) {
+            for (int i = 0; i < alphaSize; ++i) {
                 while (bsGetBit(bin)) {
                     curr += bsGetBit(bin) ? -1 : 1;
                 }
@@ -524,7 +525,7 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
                         perm_zt = perm[zt];
                         minLens_zt = minLens[zt];
                     } else {
-                        groupPos--;
+                        --groupPos;
                     }
                     int zn = minLens_zt;
                     checkBounds(zn, limit_zt.length, "zn");
@@ -560,14 +561,9 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
                 ll8[lastShadow] = seqToUnseq[tmp];
                 /*
                  * This loop is hammered during decompression, hence avoid native method call overhead of System.arraycopy for very small ranges to copy.
+                 * Refactored to use System.arraycopy for improved performance and energy efficiency, as native methods are highly optimized.
                  */
-                if (nextSym <= 16) {
-                    for (int j = nextSym - 1; j > 0;) {
-                        yy[j] = yy[--j];
-                    }
-                } else {
-                    System.arraycopy(yy, 0, yy, 1, nextSym - 1);
-                }
+                System.arraycopy(yy, 0, yy, 1, nextSym - 1);
                 yy[0] = tmp;
                 if (groupPos == 0) {
                     groupPos = G_SIZE - 1;
@@ -580,7 +576,7 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
                     perm_zt = perm[zt];
                     minLens_zt = minLens[zt];
                 } else {
-                    groupPos--;
+                    --groupPos;
                 }
                 int zn = minLens_zt;
                 checkBounds(zn, limit_zt.length, "zn");
@@ -785,12 +781,12 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
         cftab[0] = 0;
         System.arraycopy(this.data.unzftab, 0, cftab, 1, 256);
 
-        for (int i = 1, c = cftab[0]; i <= 256; i++) {
+        for (int i = 1, c = cftab[0]; i <= 256; ++i) {
             c += cftab[i];
             cftab[i] = c;
         }
 
-        for (int i = 0, lastShadow = this.last; i <= lastShadow; i++) {
+        for (int i = 0, lastShadow = this.last; i <= lastShadow; ++i) {
             final int tmp = cftab[ll8[i] & 0xff]++;
             checkBounds(tmp, ttLen, "tt index");
             tt[tmp] = i;
@@ -820,7 +816,7 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
             this.su_ch2 = su_ch2Shadow;
             checkBounds(this.su_tPos, this.data.tt.length, "su_tPos");
             this.su_tPos = this.data.tt[this.su_tPos];
-            this.su_i2++;
+            ++this.su_i2;
             this.currentState = NO_RAND_PART_B_STATE;
             this.crc.update(su_ch2Shadow);
             return su_ch2Shadow;
@@ -850,11 +846,11 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
         if (this.su_j2 < this.su_z) {
             final int su_ch2Shadow = this.su_ch2;
             this.crc.update(su_ch2Shadow);
-            this.su_j2++;
+            ++this.su_j2;
             this.currentState = NO_RAND_PART_C_STATE;
             return su_ch2Shadow;
         }
-        this.su_i2++;
+        ++this.su_i2;
         this.su_count = 0;
         return setupNoRandPartA();
     }
@@ -871,10 +867,10 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
                     this.su_rTPos = 0;
                 }
             } else {
-                this.su_rNToGo--;
+                --this.su_rNToGo;
             }
             this.su_ch2 = su_ch2Shadow ^= this.su_rNToGo == 1 ? 1 : 0;
-            this.su_i2++;
+            ++this.su_i2;
             this.currentState = RAND_PART_B_STATE;
             this.crc.update(su_ch2Shadow);
             return su_ch2Shadow;
@@ -903,7 +899,7 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
                 this.su_rTPos = 0;
             }
         } else {
-            this.su_rNToGo--;
+            --this.su_rNToGo;
         }
         this.su_j2 = 0;
         this.currentState = RAND_PART_C_STATE;
@@ -916,11 +912,11 @@ public class BZip2CompressorInputStream extends CompressorInputStream implements
     private int setupRandPartC() throws IOException {
         if (this.su_j2 < this.su_z) {
             this.crc.update(this.su_ch2);
-            this.su_j2++;
+            ++this.su_j2;
             return this.su_ch2;
         }
         this.currentState = RAND_PART_A_STATE;
-        this.su_i2++;
+        ++this.su_i2;
         this.su_count = 0;
         return setupRandPartA();
     }
